@@ -1,0 +1,100 @@
+[06:07:18] L 0x72855fE9eb11A83d156B6acC3F125c6722a2E9AA  the landlord of four flats
+           T 0xef59aCb6cD39d3268c2718CEd199281c2d01543e  the tenant of all four
+           S 0x9BD01F27538bBA46ABEa0a2Ec2A26934859090C3  a stranger
+
+[06:07:18] ---- phase A: deploy, the flat above the bakery offered and taken, three more offered
+      [06:07:57] L deploy deposit_back.py  0x3a795ac34bd083720036d334ab45148fc71d92bec5205b8ea0b7339500d89242  3 agree, 0 disagree, 2 idle  SUCCESS  0x4466DcbaDDdde74f1e1512f2a471F82828a3d189
+      Deposit Back at 0x4466DcbaDDdde74f1e1512f2a471F82828a3d189
+      [06:08:34] L offer(Two-bedroom flat a, Flat 2, 14 Mill La, [{"name":"Living r, 100000000000000000, 1800, 3600)  0x1716646ff5e463646a0a16c791205712755634e7b9b284facc78ded792b51fc8  3 agree, 0 disagree, 2 idle  SUCCESS
+PASS  the landlord offers the flat above the bakery as F1: deposit 1 GEN, five items with their move-in notes  - 3 agree, 0 disagree, 2 idle  {"ok": true, "flat": "F1", "landlord": "0x72855fe9eb11a83d156b6acc3f125c6722a2e9aa", "deposit": "1000000000000000000", "
+      [06:09:15] L offer(Studio flat by the, Unit 5, 3 Canal Wa, [{"name":"Living r, 500000000000000000, 300, 1800)  0x2f5a5d8d2e890ad3576a4b5d1eddff32405fcc7be6fdf6a4e09e651806bd2278  3 agree, 0 disagree, 2 idle  SUCCESS
+      [06:09:15] S take(F1) +0.5 GEN  0x59c94f1949df2953fdfd99b5d2b54094c232b6cd42dbaf4989202637d10c1ef7  3 agree, 0 disagree, 2 idle  SUCCESS
+PASS  a take sent with half the deposit is refused, and the half comes back in the same transaction  - 3 agree, 0 disagree, 2 idle  send exactly the deposit of 1000000000000000000 atto to take F1; this one sent 500000000000000000
+PASS  the landlord offers F2, the studio by the canal, deposit 0.5 GEN  - 3 agree, 0 disagree, 2 idle  {"ok": true, "flat": "F2", "landlord": "0x72855fe9eb11a83d156b6acc3f125c6722a2e9aa", "deposit": "500
+      [06:09:51] L offer(One-bedroom flat o, Top floor, 9 Hill , [{"name":"Hallway , 500000000000000000, 1800, 300)  0xfb95bfff8f52701d4e27f6eb15b3ac491acd64294c19df3631f39390ab9cc1d2  5 agree, 0 disagree, 0 idle  SUCCESS
+      [06:09:58] T take(F1) +1 GEN  0x1b1c09deb457ce9aed3d402acee8d6e1dd9060b64e0b7052e7b49acac9b464f5  3 agree, 0 disagree, 2 idle  SUCCESS
+PASS  the tenant takes F1 with exactly the deposit, which accepts the move-in notes as written  - 3 agree, 0 disagree, 2 idle  {"ok": true, "flat": "F1", "tenant": "0xef59acb6cd39d3268c2718ced199281c2d01543e", "deposit": "10000
+      [06:10:28] L offer(Garden flat behind, Garden flat, 22 Li, [{"name":"Oven","m, 500000000000000000, 1800, 1800)  0x4afb2f237f3dfce0a42622cc266ad7b0bddf7fcf098dac5bbd00d6732b4ba715  3 agree, 0 disagree, 2 idle  SUCCESS
+PASS  the landlord offers F3 on the hill (a short response window) and F4 behind the library  - 5 agree, 0 disagree, 0 idle / 3 agree, 0 disagree, 2 idle
+PASS  flat(F1) reads let: the tenant recorded, the deposit held, five items and no deduction yet  - {"status":"let","held":"1000000000000000000"}
+
+[06:10:30] ---- phase B: three more flats taken, and notice on all four
+      [06:11:06] T take(F2) +0.5 GEN  0x402fdcff403f4c1e6eb77fcad9bc03ad82ba3b2165bde1896b830fb5139374af  3 agree, 0 disagree, 2 idle  SUCCESS
+PASS  the tenant takes F2 with exactly its deposit of 0.5 GEN  - 3 agree, 0 disagree, 2 idle  {"ok": true, "flat": "F2", "tenant": "0xef59acb6cd39d3268c2718ced199281c2d01543e
+      [06:11:45] T take(F3) +0.5 GEN  0xb894a129df0ab554938dec9a6500e99c6e1e47bb36ed24ce1fb3753658a1112a  5 agree, 0 disagree, 0 idle  SUCCESS
+PASS  the tenant takes F3 with exactly its deposit of 0.5 GEN  - 5 agree, 0 disagree, 0 idle  {"ok": true, "flat": "F3", "tenant": "0xef59acb6cd39d3268c2718ced199281c2d01543e
+      [06:12:24] T take(F4) +0.5 GEN  0xcb3a6228b3efd9c5a5aee1439dfe839b1473ec2340cab5aacdd4d8c74f2e1d8b  3 agree, 0 disagree, 2 idle  SUCCESS
+PASS  the tenant takes F4 with exactly its deposit of 0.5 GEN  - 3 agree, 0 disagree, 2 idle  {"ok": true, "flat": "F4", "tenant": "0xef59acb6cd39d3268c2718ced199281c2d01543e
+      [06:13:01] T give_notice(F2)  0x54aca8a7577bc142033922fa691d9596dd7b36542439e29219e7ede96e28a2f8  3 agree, 0 disagree, 2 idle  SUCCESS
+PASS  the tenant gives notice on F2, and the landlord's report window starts on the chain's clock  - 3 agree, 0 disagree, 2 idle  {"ok": true, "flat": "F2", "status": "notice", "moveout_end": 1791440246}
+      [06:13:43] T give_notice(F1)  0x85acf11f059ddd7ea5045aba5a12f2cf784f2c7e14be7381317a6c03da885a74  4 agree, 0 disagree, 1 idle  SUCCESS
+PASS  the tenant gives notice on F1, and the landlord's report window starts on the chain's clock  - 4 agree, 0 disagree, 1 idle  {"ok": true, "flat": "F1", "status": "notice", "moveout_end": 1791441784}
+      [06:14:25] T give_notice(F3)  0xa72c5280fa9eb43ef36d2772e31d38c457b5872b3bfac209321fb56b88edf60c  5 agree, 0 disagree, 0 idle  SUCCESS
+PASS  the tenant gives notice on F3, and the landlord's report window starts on the chain's clock  - 5 agree, 0 disagree, 0 idle  {"ok": true, "flat": "F3", "status": "notice", "moveout_end": 1791441825}
+      [06:15:06] T give_notice(F4)  0x4026232e5720b505bf42c79a3e58ff2e11b681985167b51605939990181584a0  3 agree, 0 disagree, 2 idle  SUCCESS
+PASS  the tenant gives notice on F4, and the landlord's report window starts on the chain's clock  - 3 agree, 0 disagree, 2 idle  {"ok": true, "flat": "F4", "status": "notice", "moveout_end": 1791441867}
+
+[06:15:06] ---- phase C: the move-out reports
+      [06:15:47] L report(F1, ["Two small scuffs, [{"item":0,"amount)  0xe3f83edba1beb52c652bada3d12aeaf8cb979989ae56281d36763dcef80ab777  3 agree, 0 disagree, 2 idle  SUCCESS
+      [06:15:47] S report(F1, ["Two small scuffs, [{"item":0,"amount)  0x956a95415740c2b2d8ade169277a71acd9a681326f1c9a3019db1ad96c737415  4 agree, 0 disagree, 1 idle  ERROR
+PASS  a stranger may not file the move-out report of F1  - 4 agree, 0 disagree, 1 idle  [EXPECTED] only the landlord of F1 may file its move-out report
+PASS  the landlord files F1's report: five move-out notes and four deductions adding up to 0.9 GEN  - 3 agree, 0 disagree, 2 idle  {"ok": true, "flat": "F1", "status": "reported", "deductions": 4, "deducted": "900000000000000000", "response_end": 1791
+      [06:16:25] L report(F3, ["Oak boards in th, [{"item":1,"amount)  0x9212e8aa1516f775b194b149559209d2e1a5f33bb309e09c476987271fca1342  5 agree, 0 disagree, 0 idle  SUCCESS
+PASS  the landlord files F3's report: a lock changed because a key was never returned, 0.2 GEN  - 5 agree, 0 disagree, 0 idle  {"ok": true, "flat": "F3", "status": "reported", "deductions": 1, "deducted": "200000000000000000", 
+      [06:17:07] L report(F4, ["Burnt-on grease , [{"item":0,"amount)  0x1c48ebc238816515c6394efc2d311a9701de21dd585b41d6185d8532c357b961  3 agree, 0 disagree, 2 idle  SUCCESS
+PASS  the landlord files F4's report: an oven clean for burnt-on grease, 0.1 GEN  - 3 agree, 0 disagree, 2 idle  {"ok": true, "flat": "F4", "status": "reported", "deductions": 1, "deducted": "100000000000000000", 
+
+[06:17:07] ---- phase D: the contest, the acceptance, and a contest after it
+      [06:18:37] T contest(F1, [0,1,2])  0xde5a218c0d6aef1a02317f7bc57f25d3f91a6de611c92bb868d3649321368b99  3 agree, 0 disagree, 2 idle  SUCCESS
+PASS  the validators carry one vector, in one consensus round  - 3 agree, 0 disagree, 2 idle  -> D1:wear,D2:damage,D3:wear
+PASS  the scuffed wall and the flattened carpet are wear and the burnt worktop is damage: D1:wear,D2:damage,D3:wear  - D1:wear,D2:damage,D3:wear
+PASS  in the same transaction the tenant gets the wall, the carpet and the rest back (0.55 GEN) and the landlord the worktop and the uncontested mirror (0.45 GEN)  - {"l":"450000000000000000","t":"550000000000000000"}
+PASS  flat(F1) shows every deduction, its verdict and where its money went  - D1:wear:tenant D2:damage:landlord D3:wear:tenant D4:uncontested:landlord
+      [06:19:15] T accept(F4)  0xffbd1981b1b975de56d5c5bcbe13f533a92eccd428828f2b9fa14d94b7fcd6cd  3 agree, 0 disagree, 2 idle  SUCCESS
+PASS  the tenant accepts F4: the oven clean goes to the landlord (0.1 GEN) and the rest back (0.4 GEN)  - 3 agree, 0 disagree, 2 idle  {"l":"100000000000000000","t":"400000000000000000"}
+      [06:19:54] T contest(F4, [0])  0xb597a96850076a5ac5c390f36e5bc5cde9b84b18fd98d88bb446a18479442aae  3 agree, 0 disagree, 2 idle  ERROR
+PASS  a contest after the tenant accepted is refused  - 3 agree, 0 disagree, 2 idle  [EXPECTED] F4 is accepted; only a filed report can be contested, once
+
+[06:19:54] ---- phase E: the windows nobody acted in
+      [06:20:32] S reclaim(F2)  0x8a65480cebc5d3793694445ba834b0c97d8387c750518e937e276398435ac7e8  3 agree, 0 disagree, 2 idle  SUCCESS
+PASS  F2's landlord never reported: after the window a stranger reclaims the whole deposit for the tenant  - 3 agree, 0 disagree, 2 idle  {"ok": true, "flat": "F2", "status": "reclaimed", "paid_tenant": "500000000000000000", "paid_landlor
+      [06:20:35] waiting 25s for response_end of F3
+      [06:21:39] S settle(F3)  0xeb7c59c6347a8535d622d66d4a0e5cb7c2c206c27efc5f4056335a89aedcea18  3 agree, 0 disagree, 2 idle  SUCCESS
+PASS  F3's tenant never answered: after the response window a stranger settles it as filed  - 3 agree, 0 disagree, 2 idle  {"l":"200000000000000000","t":"300000000000000000"}
+
+[06:21:40] ---- phase F: the code read back, the views, the balances
+PASS  the code deployed at 0x4466DcbaDDdde74f1e1512f2a471F82828a3d189 is byte for byte contracts/deposit_back.py  - 55902 bytes, sha256 e2f396c3291490e509c72a9c6bea1bec6fbd4edd4f73baaf346656ffe7a1a2e7
+PASS  stats(): four flats, one judged, one accepted, one reclaimed, one settled, one refused take, three deductions read, nothing held  - {"flats":4,"taken":4,"active":0,"withdrawn":0,"reclaimed":1,"clean":0,"accepted":1,"judged":1,"settled":1,"contested":3,"damage":1,"wear":2,"unclear":0,"held":"0","paid_to_tenants":"1750000000000000000","paid_to_landlords":"750000000000000000","refused_takes":1}
+PASS  flats(0, 20): all four, oldest first, with their endings  - ["F1:judged","F2:reclaimed","F3:settled","F4:accepted"]
+PASS  flats_of(the tenant) lists the four flats it took, and flats_of finds the address in any letter case  - {"address":"0xef59acb6cd39d3268c2718ced199281c2d01543e","landlord":[],"tenant":["F1","F2","F3","F4"]}
+PASS  rules() publishes the comparison and the combine table in the contract's own words  - one verdict per contested deduction, in the deductions' order: "D1:wear,D2:damage"
+PASS  the contract's own balance is zero  - 0
+PASS  every account ends where the settlement table says: the landlord up 0.75 GEN, the tenant down 0.75 GEN, the stranger whole  - L 0.75  T -0.75  S 0
+
+32 passed, 0 failed
+Deposit Back: 0x4466DcbaDDdde74f1e1512f2a471F82828a3d189  https://explorer-studio.genlayer.com/address/0x4466DcbaDDdde74f1e1512f2a471F82828a3d189
+transactions: 23 in 23 steps; sent a second time: none
+deploy          0x3a795ac34bd083720036d334ab45148fc71d92bec5205b8ea0b7339500d89242 3 agree, 0 disagree, 2 idle SUCCESS
+offerBakery     0x1716646ff5e463646a0a16c791205712755634e7b9b284facc78ded792b51fc8 3 agree, 0 disagree, 2 idle SUCCESS
+takeHalf        0x59c94f1949df2953fdfd99b5d2b54094c232b6cd42dbaf4989202637d10c1ef7 3 agree, 0 disagree, 2 idle SUCCESS
+offerCanal      0x2f5a5d8d2e890ad3576a4b5d1eddff32405fcc7be6fdf6a4e09e651806bd2278 3 agree, 0 disagree, 2 idle SUCCESS
+offerHill       0xfb95bfff8f52701d4e27f6eb15b3ac491acd64294c19df3631f39390ab9cc1d2 5 agree, 0 disagree, 0 idle SUCCESS
+takeBakery      0x1b1c09deb457ce9aed3d402acee8d6e1dd9060b64e0b7052e7b49acac9b464f5 3 agree, 0 disagree, 2 idle SUCCESS
+offerGarden     0x4afb2f237f3dfce0a42622cc266ad7b0bddf7fcf098dac5bbd00d6732b4ba715 3 agree, 0 disagree, 2 idle SUCCESS
+takeCanal       0x402fdcff403f4c1e6eb77fcad9bc03ad82ba3b2165bde1896b830fb5139374af 3 agree, 0 disagree, 2 idle SUCCESS
+takeHill        0xb894a129df0ab554938dec9a6500e99c6e1e47bb36ed24ce1fb3753658a1112a 5 agree, 0 disagree, 0 idle SUCCESS
+takeGarden      0xcb3a6228b3efd9c5a5aee1439dfe839b1473ec2340cab5aacdd4d8c74f2e1d8b 3 agree, 0 disagree, 2 idle SUCCESS
+noticeCanal     0x54aca8a7577bc142033922fa691d9596dd7b36542439e29219e7ede96e28a2f8 3 agree, 0 disagree, 2 idle SUCCESS
+noticeBakery    0x85acf11f059ddd7ea5045aba5a12f2cf784f2c7e14be7381317a6c03da885a74 4 agree, 0 disagree, 1 idle SUCCESS
+noticeHill      0xa72c5280fa9eb43ef36d2772e31d38c457b5872b3bfac209321fb56b88edf60c 5 agree, 0 disagree, 0 idle SUCCESS
+noticeGarden    0x4026232e5720b505bf42c79a3e58ff2e11b681985167b51605939990181584a0 3 agree, 0 disagree, 2 idle SUCCESS
+reportStranger  0x956a95415740c2b2d8ade169277a71acd9a681326f1c9a3019db1ad96c737415 4 agree, 0 disagree, 1 idle ERROR
+reportBakery    0xe3f83edba1beb52c652bada3d12aeaf8cb979989ae56281d36763dcef80ab777 3 agree, 0 disagree, 2 idle SUCCESS
+reportHill      0x9212e8aa1516f775b194b149559209d2e1a5f33bb309e09c476987271fca1342 5 agree, 0 disagree, 0 idle SUCCESS
+reportGarden    0x1c48ebc238816515c6394efc2d311a9701de21dd585b41d6185d8532c357b961 3 agree, 0 disagree, 2 idle SUCCESS
+contestBakery   0xde5a218c0d6aef1a02317f7bc57f25d3f91a6de611c92bb868d3649321368b99 3 agree, 0 disagree, 2 idle SUCCESS
+acceptGarden    0xffbd1981b1b975de56d5c5bcbe13f533a92eccd428828f2b9fa14d94b7fcd6cd 3 agree, 0 disagree, 2 idle SUCCESS
+contestGarden   0xb597a96850076a5ac5c390f36e5bc5cde9b84b18fd98d88bb446a18479442aae 3 agree, 0 disagree, 2 idle ERROR
+reclaimCanal    0x8a65480cebc5d3793694445ba834b0c97d8387c750518e937e276398435ac7e8 3 agree, 0 disagree, 2 idle SUCCESS
+settleHill      0xeb7c59c6347a8535d622d66d4a0e5cb7c2c206c27efc5f4056335a89aedcea18 3 agree, 0 disagree, 2 idle SUCCESS
+

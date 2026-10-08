@@ -1,0 +1,14 @@
+{
+  "name": "deposit-back",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Deposit Back: a rental deposit that comes back item by item, judged by GenLayer validators.",
+  "type": "module",
+  "scripts": {
+    "smoke": "node tests/on_chain/smoke.mjs"
+  },
+  "dependencies": {
+    "genlayer-js": "1.1.8",
+    "viem": "2.56.8"
+  }
+}
