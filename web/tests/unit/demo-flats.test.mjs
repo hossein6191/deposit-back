@@ -1,16 +1,27 @@
-// The six sample flats: every text inside the contract's limits, a clear mix in every report, and
+// The ten sample flats: every text inside the contract's limits, a clear mix in every report, and
 // the rule the demo landlord follows before it signs anything.
 
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { SAMPLE_FLATS, demoReportProblem, offerArgs, reportArgs, sampleFor } from "../../lib/demo-flats.ts";
+import { DEMO_SAMPLES, SAMPLE_FLATS, demoReportProblem, offerArgs, reportArgs, sampleFor } from "../../lib/demo-flats.ts";
 import { MAX_ADDRESS, MAX_TITLE, MAX_WINDOW, MIN_ADDRESS, MIN_DEPOSIT, MAX_DEPOSIT, MIN_TITLE, MIN_WINDOW, readDeductions, readItems, readMoveout, textProblem } from "../../lib/rules.ts";
 
-test("there are six, each with its own key and title", () => {
-  assert.equal(SAMPLE_FLATS.length, 6);
-  assert.equal(new Set(SAMPLE_FLATS.map((s) => s.key)).size, 6);
-  assert.equal(new Set(SAMPLE_FLATS.map((s) => s.title)).size, 6);
+test("there are ten, each with its own key and title; the demo landlord's six come first, in their order", () => {
+  assert.equal(SAMPLE_FLATS.length, 10);
+  assert.equal(new Set(SAMPLE_FLATS.map((s) => s.key)).size, 10);
+  assert.equal(new Set(SAMPLE_FLATS.map((s) => s.title)).size, 10);
+  assert.deepEqual(DEMO_SAMPLES.map((s) => s.key), ["bakery", "canal", "garden", "loft", "station", "harbour"]);
+  assert.deepEqual(SAMPLE_FLATS.slice(6).map((s) => s.key), ["mill", "chapel", "mews", "wharf"]);
+});
+
+test("the four form-only samples: four to six items each, and every sample recognised as itself", () => {
+  for (const s of SAMPLE_FLATS.slice(6)) {
+    assert.ok(s.items.length >= 4 && s.items.length <= 6, `${s.key} has ${s.items.length} items`);
+    assert.equal(s.moveOut.length, s.items.length, `${s.key}: a move-out note per item`);
+    assert.equal(new Set(s.deductions.map((d) => d.item)).size, s.deductions.length, `${s.key}: one deduction per item`);
+  }
+  for (const s of SAMPLE_FLATS) assert.equal(sampleFor(s.title, s.items)?.key, s.key);
 });
 
 for (const s of SAMPLE_FLATS) {

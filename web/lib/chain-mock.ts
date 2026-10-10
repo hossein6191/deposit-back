@@ -14,7 +14,7 @@
 
 import type { Call, DemoReportAnswer, DemoStatus, TxStatus, WriteFn } from "./types.ts";
 import { notify } from "./browser-store.ts";
-import { SAMPLE_FLATS, demoReportProblem, offerArgs, reportArgs, sampleByKey, sampleFor, type SampleFlat } from "./demo-flats.ts";
+import { DEMO_SAMPLES, demoReportProblem, offerArgs, reportArgs, sampleByKey, sampleFor, type SampleFlat } from "./demo-flats.ts";
 import {
   ID_CHARS,
   ADDRESS_CHARS,
@@ -703,8 +703,8 @@ function seed(): void {
   const now = mockNow();
   const DAY = 86400;
   const HOUR = 3600;
-  // Two open copies of every sample flat, offered three days ago: F1 to F12.
-  for (const s of SAMPLE_FLATS) {
+  // Two open copies of each of the demo landlord's six sample flats, offered three days ago: F1 to F12.
+  for (const s of DEMO_SAMPLES) {
     at(DEMO_LANDLORD, now - 3 * DAY, "offer", offerArgs(s));
     at(DEMO_LANDLORD, now - 3 * DAY + 60, "offer", offerArgs(s));
   }

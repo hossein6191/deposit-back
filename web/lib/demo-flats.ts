@@ -1,7 +1,9 @@
-// The six sample flats. The demo landlord offers copies of them on chain (tools/offer-demo.mjs),
-// the landlord page loads them into its form, the floor plans are drawn from them, and the demo
-// landlord's move-out report for each is scripted here: POST /api/demo/report signs exactly these
-// notes and deductions, and the in-memory contract of mock mode files the same.
+// The ten sample flats. The landlord page loads any of them into its form, the floor plans are drawn
+// from them, and each one's move-out report is scripted here. The first six are the demo
+// landlord's: it offers copies of them on chain (tools/offer-demo.mjs), POST /api/demo/report signs
+// exactly their notes and deductions, and the in-memory contract of mock mode files the same. The
+// four after them are only offered from the landlord's form; a landlord who offers a copy can load
+// its scripted report when filing. Never reorder or reword the first six: copies are on chain.
 //
 // Every sample has a clear mix: at least one deduction that is plainly damage, at least one that is
 // plainly wear, and at least one item with no deduction. Each also shows one thing on its own (its
@@ -325,7 +327,207 @@ export const SAMPLE_FLATS: SampleFlat[] = [
       ],
     },
   },
+  {
+    key: "mill",
+    title: "Flat in the converted rope mill",
+    addressLine: "Flat 12, The Rope Mill, Quay Street",
+    depositAtto: gen(130),
+    moveoutSeconds: DEMO_MOVEOUT_SECONDS,
+    responseSeconds: DEMO_RESPONSE_SECONDS,
+    blurb: "Brick walls and a quartz island: a chipped basin, a hall carpet already thin, a blind yellowed by the sun.",
+    lesson: "The amount does not decide it: a small charge for a chipped basin is damage, a large one for a carpet already thin is wear.",
+    items: [
+      { name: "Exposed brick wall", move_in: "Exposed red brick wall in the living room, cleaned and sealed, no paint, holes or wall plugs in it." },
+      { name: "Kitchen island", move_in: "Kitchen island with a white quartz top, no chips, cracks or stains, four bar stools with it." },
+      { name: "Bathroom basin", move_in: "White ceramic basin on a vanity unit, no chips or cracks, tap and plug work, no leaks underneath." },
+      { name: "Hallway carpet", move_in: "Charcoal hallway carpet, eight years old, already thin along the middle, no stains or tears." },
+      { name: "Bedroom blinds", move_in: "Two white roller blinds in the bedroom, both roll up and down, fabric clean and white, no tears." },
+    ],
+    moveOut: [
+      "Brick wall clean and sealed, no paint, holes or wall plugs in it, the same as at move-in.",
+      "Quartz top clean with no chips, cracks or stains, and all four bar stools are there.",
+      "A chip about 1 cm across in the front rim of the basin where something heavy was dropped; tap and plug work.",
+      "Carpet a little thinner along the middle of the hall where people walk; no stains, tears or burns.",
+      "Both blinds roll up and down; the fabric of the one facing south has yellowed slightly in the sun.",
+    ],
+    deductions: [
+      { item: 2, amount: gen(10), reason: "Filling and reglazing the chipped front rim of the bathroom basin.", expect: "damage" },
+      { item: 3, amount: gen(60), reason: "Replacing the whole hallway carpet, which is worn thin along the middle.", expect: "wear" },
+      { item: 4, amount: gen(15), reason: "Replacing the bedroom roller blind that has yellowed.", expect: "wear" },
+    ],
+    plan: {
+      cols: [190, 120, 100],
+      rows: [120, 50, 110],
+      rooms: [
+        { id: "living", label: "Living room", kind: "living", c: 0, r: 0 },
+        { id: "kitchen", label: "Kitchen", kind: "kitchen", c: 1, r: 0, cs: 2 },
+        { id: "hall", label: "Hall", kind: "hall", c: 0, r: 1, cs: 3 },
+        { id: "bed", label: "Bedroom", kind: "bed", c: 0, r: 2, cs: 2 },
+        { id: "bath", label: "Bathroom", kind: "bath", c: 2, r: 2 },
+      ],
+      doors: [["hall", "living"], ["hall", "kitchen"], ["hall", "bed"], ["hall", "bath"]],
+      entry: { room: "hall", side: "w" },
+      items: [
+        { room: "living", near: "wall" },
+        { room: "kitchen", near: "counter" },
+        { room: "bath", near: "basin" },
+        { room: "hall", near: "floor" },
+        { room: "bed", near: "window" },
+      ],
+    },
+  },
+  {
+    key: "chapel",
+    title: "First-floor flat opposite the old chapel",
+    addressLine: "Flat 4, 19 Chapel Street",
+    depositAtto: gen(90),
+    moveoutSeconds: DEMO_MOVEOUT_SECONDS,
+    responseSeconds: DEMO_RESPONSE_SECONDS,
+    blurb: "Over the square from the chapel: a wardrobe scratched before anyone moved in, a snapped pan support, a flattened rug.",
+    lesson: "The move-in note is the baseline: a scratch written down on move-in day cannot be charged for at move-out.",
+    items: [
+      { name: "Wardrobe", move_in: "Oak-veneer double wardrobe, both doors close; one 8 cm scratch already across the left door." },
+      { name: "Gas hob", move_in: "Four-ring gas hob, every ring lights, all pan supports and burner caps present, enamel clean." },
+      { name: "Sitting room rug", move_in: "Red wool rug under the coffee table, cleaned before move-in, no stains, burns or frayed edges." },
+      { name: "Bathroom fan", move_in: "Extractor fan runs when the bathroom light is on, grille clean and fixed, no rattling." },
+      { name: "Bedroom walls", move_in: "Bedroom walls painted pale yellow, two picture hooks above the bed, no other marks or holes." },
+    ],
+    moveOut: [
+      "The same 8 cm scratch across the left door as at move-in; both doors close and nothing else is marked.",
+      "Every ring lights and the caps are present; one pan support is snapped in two and the enamel under it is chipped.",
+      "Rug clean; the pile is flattened and the red a little paler where the coffee table and the chairs stood.",
+      "Fan runs when the light is on, grille clean and fixed, the same as at move-in.",
+      "Two picture hooks above the bed as at move-in, walls pale yellow with no other marks or holes.",
+    ],
+    deductions: [
+      { item: 0, amount: gen(20), reason: "Refinishing the left wardrobe door to remove the long scratch across it.", expect: "wear" },
+      { item: 1, amount: gen(15), reason: "Replacing the snapped pan support and repairing the chipped enamel of the gas hob.", expect: "damage" },
+      { item: 2, amount: gen(20), reason: "Professional cleaning of the sitting room rug, which is flattened and paler where the furniture stood.", expect: "wear" },
+    ],
+    plan: {
+      cols: [120, 120, 120],
+      rows: [100, 40, 90],
+      rooms: [
+        { id: "kitchen", label: "Kitchen", kind: "kitchen", c: 0, r: 0 },
+        { id: "living", label: "Sitting room", kind: "living", c: 1, r: 0, cs: 2 },
+        { id: "hall", label: "Hall", kind: "hall", c: 0, r: 1, cs: 3 },
+        { id: "bed", label: "Bedroom", kind: "bed", c: 0, r: 2, cs: 2 },
+        { id: "bath", label: "Bathroom", kind: "bath", c: 2, r: 2 },
+      ],
+      doors: [["hall", "kitchen"], ["hall", "living"], ["hall", "bed"], ["hall", "bath"]],
+      entry: { room: "hall", side: "e" },
+      items: [
+        { room: "bed", near: "wardrobe" },
+        { room: "kitchen", near: "hob" },
+        { room: "living", near: "floor" },
+        { room: "bath", at: [0.5, 0.2] },
+        { room: "bed", near: "wall" },
+      ],
+    },
+  },
+  {
+    key: "mews",
+    title: "Two-storey mews house by the tannery",
+    addressLine: "3 Tannery Mews",
+    depositAtto: gen(140),
+    moveoutSeconds: DEMO_MOVEOUT_SECONDS,
+    responseSeconds: DEMO_RESPONSE_SECONDS,
+    blurb: "A narrow house round a paved courtyard: a worn-out washing machine, a door torn off its hinge, a cracked shower tray.",
+    lesson: "Wearing out is not breaking: the old washing machine stopped with age, the cupboard door was pulled off its hinge.",
+    items: [
+      { name: "Washing machine", move_in: "Front-loading washing machine, nine years old, works on every programme, door seal clean." },
+      { name: "Kitchen cupboards", move_in: "Six grey cupboard doors on the kitchen wall, all hang straight and close flush, no chips." },
+      { name: "Stair carpet", move_in: "Green stair carpet on fourteen treads, fitted three years ago, rods in place, no stains." },
+      { name: "Courtyard paving", move_in: "Stone paving in the courtyard, swept, every slab level and whole, two planters by the gate." },
+      { name: "Shower tray", move_in: "White shower tray with a glass door, no cracks in the tray, sealant along the edges clean and complete." },
+      { name: "Landing window", move_in: "Sash window on the landing opens and closes on its cords, glass whole, the catch locks." },
+    ],
+    moveOut: [
+      "The drum no longer turns on any programme; the motor has worn out after nine years of ordinary use.",
+      "One cupboard door has been pulled off its top hinge and hangs at an angle; the screw holes are torn out.",
+      "Treads worn smoother in the middle where people walk; rods in place, no stains, tears or burns.",
+      "Every slab level and whole, swept, both planters by the gate, the same as at move-in.",
+      "A crack about 12 cm long by the drain of the shower tray, and water seeps under it when the shower runs.",
+      "Window opens and closes on its cords, glass whole, the catch locks, as at move-in.",
+    ],
+    deductions: [
+      { item: 0, amount: gen(40), reason: "Replacing the washing machine, which stopped working before the end of the tenancy.", expect: "wear" },
+      { item: 1, amount: gen(15), reason: "Rehanging the kitchen cupboard door that was pulled off its hinge and filling the torn screw holes.", expect: "damage" },
+      { item: 2, amount: gen(20), reason: "Replacing the stair carpet, which is worn in the middle of the treads.", expect: "wear" },
+      { item: 4, amount: gen(35), reason: "Replacing the cracked shower tray and resealing it so no more water gets under it.", expect: "damage" },
+    ],
+    plan: {
+      cols: [110, 150, 110],
+      rows: [90, 45, 95],
+      rooms: [
+        { id: "yard", label: "Courtyard", kind: "garden", c: 0, r: 0, rs: 3 },
+        { id: "kitchen", label: "Kitchen", kind: "kitchen", c: 1, r: 0 },
+        { id: "shower", label: "Shower room", kind: "bath", c: 2, r: 0 },
+        { id: "hall", label: "Hall and stairs", kind: "hall", c: 1, r: 1, cs: 2 },
+        { id: "bed", label: "Bedroom", kind: "bed", c: 1, r: 2, cs: 2 },
+      ],
+      doors: [["kitchen", "yard"], ["hall", "kitchen"], ["hall", "shower"], ["hall", "bed"]],
+      entry: { room: "hall", side: "e" },
+      items: [
+        { room: "kitchen", near: "sink" },
+        { room: "kitchen", near: "cupboard" },
+        { room: "hall", near: "floor" },
+        { room: "yard", near: "lawn" },
+        { room: "shower", near: "shower" },
+        { room: "hall", at: [0.12, 0.5] },
+      ],
+    },
+  },
+  {
+    key: "wharf",
+    title: "Riverside flat at the old wharf",
+    addressLine: "Flat 7, 2 Wharf Steps",
+    depositAtto: gen(100),
+    moveoutSeconds: DEMO_MOVEOUT_SECONDS,
+    responseSeconds: DEMO_RESPONSE_SECONDS,
+    blurb: "A balcony over the river: an oven left caked in grease, sun-faded wallpaper, a window seat and a fridge as found.",
+    lesson: "Neglect is not wear: an oven left caked in burnt grease is damage, while wallpaper fading in the sun is wear.",
+    items: [
+      { name: "Oven", move_in: "Electric oven professionally cleaned before move-in, both racks and the grill pan clean, glass door clear." },
+      { name: "Fridge freezer", move_in: "Tall fridge freezer, clean inside and working, three shelves, two freezer drawers and the door racks." },
+      { name: "Window seat cushion", move_in: "Navy cushion on the window seat over the river, cover clean, zip works, no tears or stains." },
+      { name: "Bedroom wallpaper", move_in: "Cream striped wallpaper in the bedroom, hung last year, no tears, marks or loose seams." },
+    ],
+    moveOut: [
+      "The oven is caked with burnt-on grease, the glass door is brown and both racks are black with carbon.",
+      "Fridge freezer clean inside and working, with every shelf, drawer and door rack present.",
+      "Cushion cover clean, zip works, no tears or stains, the same as at move-in.",
+      "Wallpaper paler on the wall opposite the window, and two seams lifting slightly at the top in the heat.",
+    ],
+    deductions: [
+      { item: 0, amount: gen(20), reason: "Professional oven cleaning to remove the burnt-on grease and carbon left at move-out.", expect: "damage" },
+      { item: 3, amount: gen(25), reason: "Rehanging the bedroom wallpaper, which has faded and lifted at the seams.", expect: "wear" },
+    ],
+    plan: {
+      cols: [100, 160, 60],
+      rows: [110, 40, 90],
+      rooms: [
+        { id: "kitchen", label: "Kitchen", kind: "kitchen", c: 0, r: 0 },
+        { id: "living", label: "Living room", kind: "living", c: 1, r: 0 },
+        { id: "balcony", label: "Balcony", kind: "balcony", c: 2, r: 0, rs: 3 },
+        { id: "hall", label: "Hall", kind: "hall", c: 0, r: 1, cs: 2 },
+        { id: "bath", label: "Bathroom", kind: "bath", c: 0, r: 2 },
+        { id: "bed", label: "Bedroom", kind: "bed", c: 1, r: 2 },
+      ],
+      doors: [["hall", "kitchen"], ["hall", "living"], ["hall", "bath"], ["hall", "bed"], ["living", "balcony"]],
+      entry: { room: "hall", side: "w" },
+      items: [
+        { room: "kitchen", near: "oven" },
+        { room: "kitchen", near: "fridge" },
+        { room: "living", near: "window" },
+        { room: "bed", near: "wall" },
+      ],
+    },
+  },
 ];
+
+/** The six sample flats the demo landlord offers on chain, and only those: the first six, in order. */
+export const DEMO_SAMPLES: SampleFlat[] = SAMPLE_FLATS.slice(0, 6);
 
 /** The sample flat a flat on chain is a copy of: the same title and the same items, word for word. */
 export function sampleFor(title: string, items: { name: string; moveIn?: string; move_in?: string }[]): SampleFlat | null {

@@ -1,13 +1,15 @@
 "use client";
 
 // Offering a flat: a title, an address line, a deposit, two windows, and two to eight items, each
-// with its condition on the day the tenant moves in. Load one of the six sample flats, or write
-// your own; the plan beside the form is redrawn from the items as they are typed.
+// with its condition on the day the tenant moves in. Load one of the ten sample flats, or write
+// your own; every field also has ready suggestions that fill it in one click (components/suggest.tsx),
+// and the plan beside the form is redrawn from the items as they are typed.
 
 import * as React from "react";
 
 import { FloorPlan } from "@/components/floor-plan";
 import { KeyTag } from "@/components/key-tag";
+import { Chips, ItemPicker } from "@/components/suggest";
 import { calls } from "@/lib/chain";
 import { SAMPLE_FLATS, type SampleFlat } from "@/lib/demo-flats";
 import { genText, tryAtto } from "@/lib/format";
@@ -29,6 +31,7 @@ import {
   sentence,
   textProblem,
 } from "@/lib/rules";
+import { ADDRESS_SUGGESTIONS, DEPOSIT_SUGGESTIONS, TITLE_SUGGESTIONS } from "@/lib/suggestions";
 import type { Call } from "@/lib/types";
 import { cx } from "@/lib/cx";
 
@@ -82,6 +85,7 @@ export function OfferForm({ run, busy }: { run: (call: Call, label: string) => v
       return { name: name || twin, note: textProblem(it.moveIn, MIN_NOTE, MAX_NOTE, `The move-in note of item ${k + 1}`) };
     }),
   };
+  const used = new Set(items.map((it) => it.name.toLowerCase()).filter(Boolean));
   const ok = !problems.title && !problems.address && !problems.deposit && problems.items.every((p) => !p.name && !p.note);
   const plan = planForFlat(title, items.map((it, k) => ({ name: it.name || `Item ${k + 1}`, moveIn: it.moveIn })));
 
@@ -96,7 +100,7 @@ export function OfferForm({ run, busy }: { run: (call: Call, label: string) => v
     <div className="space-y-6">
       <div>
         <p className="text-sm font-semibold">Load a sample flat</p>
-        <ul className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <ul className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-5">
           {SAMPLE_FLATS.map((s) => (
             <li key={s.key}>
               <button
@@ -137,16 +141,52 @@ export function OfferForm({ run, busy }: { run: (call: Call, label: string) => v
 
       <form onSubmit={submit} noValidate className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_20rem]">
         <div className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field id="title" label="Title" problem={tried ? problems.title : ""} hint={`${MIN_TITLE} to ${MAX_TITLE} characters`}>
-              <input id="title" className="field" value={d.title} onChange={(e) => set({ title: e.target.value })} aria-invalid={tried && !!problems.title} placeholder="Two-bedroom flat above the bakery" />
-            </Field>
-            <Field id="address" label="Address line" problem={tried ? problems.address : ""} hint={`${MIN_ADDRESS} to ${MAX_ADDRESS} characters`}>
-              <input id="address" className="field" value={d.addressLine} onChange={(e) => set({ addressLine: e.target.value })} aria-invalid={tried && !!problems.address} placeholder="Flat 2, 14 Mill Lane" />
-            </Field>
-          </div>
+          <Field
+            id="title"
+            label="Title"
+            problem={tried ? problems.title : ""}
+            hint={`${MIN_TITLE} to ${MAX_TITLE} characters`}
+            extra={
+              <Chips
+                label="Title suggestions"
+                lead="Pick one:"
+                chips={TITLE_SUGGESTIONS.map((t) => ({ key: t, label: t, pressed: title === t }))}
+                onPick={(t) => set({ title: t })}
+              />
+            }
+          >
+            <input id="title" className="field" value={d.title} onChange={(e) => set({ title: e.target.value })} aria-invalid={tried && !!problems.title} placeholder="Two-bedroom flat above the bakery" />
+          </Field>
+          <Field
+            id="address"
+            label="Address line"
+            problem={tried ? problems.address : ""}
+            hint={`${MIN_ADDRESS} to ${MAX_ADDRESS} characters`}
+            extra={
+              <Chips
+                label="Address suggestions"
+                lead="Pick one:"
+                chips={ADDRESS_SUGGESTIONS.map((a) => ({ key: a, label: a, pressed: addressLine === a }))}
+                onPick={(a) => set({ addressLine: a })}
+              />
+            }
+          >
+            <input id="address" className="field" value={d.addressLine} onChange={(e) => set({ addressLine: e.target.value })} aria-invalid={tried && !!problems.address} placeholder="Flat 2, 14 Mill Lane" />
+          </Field>
           <div className="grid gap-4 sm:grid-cols-3">
-            <Field id="deposit" label="Deposit (GEN)" problem={tried ? problems.deposit : ""} hint="0.1 to 1000 test GEN">
+            <Field
+              id="deposit"
+              label="Deposit (GEN)"
+              problem={tried ? problems.deposit : ""}
+              hint="0.1 to 1000 test GEN"
+              extra={
+                <Chips
+                  label="Deposit suggestions in GEN"
+                  chips={DEPOSIT_SUGGESTIONS.map((v) => ({ key: v, label: `${v} GEN`, pressed: deposit !== null && deposit === tryAtto(v) }))}
+                  onPick={(v) => set({ deposit: v })}
+                />
+              }
+            >
               <input id="deposit" inputMode="decimal" className="field" value={d.deposit} onChange={(e) => set({ deposit: e.target.value })} aria-invalid={tried && !!problems.deposit} placeholder="1" />
             </Field>
             <Field id="moveout" label="Your time to report" hint="from the tenant's notice">
@@ -175,8 +215,9 @@ export function OfferForm({ run, busy }: { run: (call: Call, label: string) => v
             </legend>
             {d.items.map((it, k) => (
               <div key={k} className="rounded-sm border border-rule bg-card p-3">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="font-display text-lg font-semibold">Item {k + 1}</span>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <span className="mr-auto font-display text-lg font-semibold">Item {k + 1}</span>
+                  <ItemPicker id={`picker-${k}`} used={used} onPick={(s) => setItem(k, { name: s.name, moveIn: s.moveIn })} />
                   {d.items.length > MIN_ITEMS && (
                     <button type="button" className="link text-sm" onClick={() => setD((x) => ({ ...x, items: x.items.filter((_, i) => i !== k) }))}>
                       Remove
@@ -220,7 +261,22 @@ export function OfferForm({ run, busy }: { run: (call: Call, label: string) => v
   );
 }
 
-function Field({ id, label, hint, problem, children }: { id: string; label: string; hint?: string; problem?: string; children: React.ReactNode }) {
+function Field({
+  id,
+  label,
+  hint,
+  problem,
+  extra,
+  children,
+}: {
+  id: string;
+  label: string;
+  hint?: string;
+  problem?: string;
+  /** shown under the hint: the field's suggestions */
+  extra?: React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
     <div>
       <label htmlFor={id} className="block text-sm font-semibold">
@@ -228,6 +284,7 @@ function Field({ id, label, hint, problem, children }: { id: string; label: stri
       </label>
       <div className="mt-1">{children}</div>
       {problem ? <p className="mt-1 text-xs text-brick">{sentence(problem)}</p> : hint ? <p className="mt-1 text-xs text-ink-faint">{hint}</p> : null}
+      {extra && <div className="mt-2">{extra}</div>}
     </div>
   );
 }

@@ -236,13 +236,13 @@ no network.
 | `/` | Deposit Back in one minute; the newest judged flat drawn as a floor plan with the network's word on each item (the worked example above until there is one); how the money splits; the ways in |
 | `/flats` | every open offer as a "To let" card with its plan, deposit and items, the six sample flats first |
 | `/flat/F12` | one lease: the floor plan beside every item's move-in and move-out notes; the tenancy line (offer, taken, notice, move-out report, answer, settled), which moves with the contract and the clock; and the next step for whoever is looking: take, give notice, file the report, accept, contest with a box per deduction, reclaim or settle. Every deduction shows the contract's own outcome and where its money went, a bar splits the deposit, and every transaction shows its explorer link while the validators vote |
-| `/landlord` | offer a flat, one of the six samples or your own items (the plan is redrawn as you type), and file the move-out report on your own flats |
+| `/landlord` | offer a flat, one of the ten samples or your own items (the plan is redrawn as you type), and file the move-out report on your own flats; every field has suggestions that fill it in one click |
 | `/mine` | the connected account's tenancies and flats, each with the step it waits for |
 | `/ledger` | `stats()`: what is held, what went back to tenants and to landlords, the damage, wear and unclear words so far, and the flats that closed most recently |
 | `/how` | how a contest is decided: the two askings, the combine table, the stored value, the money, the limits, and `rules()` read live |
 
 **The demo landlord.** So that one visitor can try a whole tenancy alone, the
-six sample flats in `web/lib/demo-flats.ts` are offered on chain by a demo
+first six of the ten sample flats in `web/lib/demo-flats.ts` are offered on chain by a demo
 landlord, a throwaway Studio test key that only the site's server holds
 (`DEMO_LANDLORD_KEY`). Each sample has a scripted move-out report with at least
 one deduction that is plainly damage, one that is plainly wear, and one item

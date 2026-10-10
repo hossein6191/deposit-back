@@ -1,4 +1,4 @@
-// Offers copies of the six sample flats from the demo landlord's key, so that many visitors can each
+// Offers copies of the demo landlord's six sample flats from its key, so that many visitors can each
 // take one. Run it by hand once the contract is deployed; nothing in the build runs it.
 //
 //   REGISTER=0x... DEMO_LANDLORD_KEY=0x... node tools/offer-demo.mjs          # 3 copies of each sample
@@ -14,7 +14,7 @@
 import { createAccount, createClient } from "genlayer-js";
 import { studionet } from "genlayer-js/chains";
 
-import { SAMPLE_FLATS, offerArgs } from "../lib/demo-flats.ts";
+import { DEMO_SAMPLES, offerArgs } from "../lib/demo-flats.ts";
 
 const RPC = "https://studio.genlayer.com/api";
 const EXPLORER = "https://explorer-studio.genlayer.com";
@@ -32,10 +32,11 @@ const fail = (message) => {
 };
 if (!/^0x[0-9a-fA-F]{40}$/.test(REGISTER)) fail("REGISTER must be the deployed contract's 0x address.");
 if (!DRY && !/^0x[0-9a-fA-F]{64}$/.test(KEY)) fail("DEMO_LANDLORD_KEY must be a 0x private key of 64 hex characters (a throwaway Studio key).");
-const unknown = ONLY.filter((k) => !SAMPLE_FLATS.some((s) => s.key === k));
-if (unknown.length) fail(`No sample flat called ${unknown.join(", ")}. The six are ${SAMPLE_FLATS.map((s) => s.key).join(", ")}.`);
+// Only the demo landlord's six (DEMO_SAMPLES): the flats page lists no other sample as the demo's.
+const unknown = ONLY.filter((k) => !DEMO_SAMPLES.some((s) => s.key === k));
+if (unknown.length) fail(`No demo sample flat called ${unknown.join(", ")}. The six are ${DEMO_SAMPLES.map((s) => s.key).join(", ")}.`);
 
-const samples = SAMPLE_FLATS.filter((s) => !ONLY.length || ONLY.includes(s.key));
+const samples = DEMO_SAMPLES.filter((s) => !ONLY.length || ONLY.includes(s.key));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function rpc(method, params) {

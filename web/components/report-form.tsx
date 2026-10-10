@@ -1,24 +1,28 @@
 "use client";
 
 // The landlord's move-out report: one move-out note per item, and a deduction for any item that
-// needs one (an amount and a reason). Checked here against the contract's own limits before the
-// wallet is asked; the contract checks again.
+// needs one (an amount and a reason). Every note, reason and amount has ready suggestions that fill
+// it in one click (lib/suggestions.ts); the reasons offered follow the note picked. Checked here
+// against the contract's own limits before the wallet is asked; the contract checks again.
 
 import * as React from "react";
 
 import { KeyTag } from "@/components/key-tag";
 import { SplitBar } from "@/components/split-bar";
+import { Chips } from "@/components/suggest";
 import { calls, type DeductionDraft } from "@/lib/chain";
 import { sampleFor } from "@/lib/demo-flats";
 import { genText, gen, tryAtto } from "@/lib/format";
 import { MAX_DEDUCTIONS, MAX_NOTE, MAX_REASON, MIN_NOTE, MIN_REASON, plain, sentence, textProblem } from "@/lib/rules";
+import { AMOUNT_SUGGESTIONS, NOTE_KINDS, REASON_KINDS, deductionReason, moveOutNote, reasonsFor, type NoteKind } from "@/lib/suggestions";
 import type { Call, Flat } from "@/lib/types";
 import { cx } from "@/lib/cx";
 
-type Line = { note: string; on: boolean; amount: string; reason: string };
+/** `kind` is the move-out suggestion last picked for the line, which decides the reasons offered. */
+type Line = { note: string; kind: NoteKind | ""; on: boolean; amount: string; reason: string };
 
 export function ReportForm({ flat, run, busy }: { flat: Flat; run: (call: Call, label: string) => void; busy: boolean }) {
-  const [lines, setLines] = React.useState<Line[]>(() => flat.items.map(() => ({ note: "", on: false, amount: "", reason: "" })));
+  const [lines, setLines] = React.useState<Line[]>(() => flat.items.map(() => ({ note: "", kind: "", on: false, amount: "", reason: "" })));
   const [tried, setTried] = React.useState(false);
   const sample = sampleFor(flat.title, flat.items);
   const deposit = BigInt(flat.depositAtto);
@@ -30,7 +34,7 @@ export function ReportForm({ flat, run, busy }: { flat: Flat; run: (call: Call, 
     setLines(
       flat.items.map((_, k) => {
         const d = sample.deductions.find((x) => x.item === k);
-        return { note: sample.moveOut[k] ?? "", on: !!d, amount: d ? genText(d.amount) : "", reason: d?.reason ?? "" };
+        return { note: sample.moveOut[k] ?? "", kind: "", on: !!d, amount: d ? genText(d.amount) : "", reason: d?.reason ?? "" };
       }),
     );
   };
@@ -50,6 +54,8 @@ export function ReportForm({ flat, run, busy }: { flat: Flat; run: (call: Call, 
     return l.on && atto !== null && atto > 0n ? [{ item: k, amountAtto: atto, reason: plain(l.reason) }] : [];
   });
   const total = deductions.reduce((a, d) => a + d.amountAtto, 0n);
+  /** What the other lines leave of the deposit for line k: an amount chip above it is greyed out. */
+  const leftFor = (k: number) => deposit - deductions.reduce((a, d) => (d.item === k ? a : a + d.amountAtto), 0n);
   const count = lines.filter((l) => l.on).length;
   const whole: string[] = [];
   if (count > MAX_DEDUCTIONS) whole.push(`At most ${MAX_DEDUCTIONS} deductions, one per item; this report has ${count}.`);
@@ -110,6 +116,13 @@ export function ReportForm({ flat, run, busy }: { flat: Flat; run: (call: Call, 
               <p id={`note-${k}-help`} className={cx("mt-1 text-xs", tried && p.note ? "text-brick" : "text-ink-faint")}>
                 {tried && p.note ? sentence(p.note) : `${plain(l.note).length} of ${MIN_NOTE} to ${MAX_NOTE} characters. Only what this note says can show damage.`}
               </p>
+              <Chips
+                className="mt-2"
+                label={`Move-out suggestions for ${item.name}`}
+                lead="Pick one:"
+                chips={NOTE_KINDS.map((n) => ({ key: n.kind, label: n.label, pressed: plain(l.note) === moveOutNote(n.kind, item.name) }))}
+                onPick={(kind) => set(k, { note: moveOutNote(kind as NoteKind, item.name), kind: kind as NoteKind })}
+              />
               <label className="mt-3 inline-flex items-center gap-2 text-sm font-semibold">
                 <input type="checkbox" className="size-4 accent-[#a4502f]" checked={l.on} onChange={(e) => set(k, { on: e.target.checked })} />
                 Deduct for this item
@@ -130,6 +143,15 @@ export function ReportForm({ flat, run, busy }: { flat: Flat; run: (call: Call, 
                       placeholder="0.25"
                     />
                     {tried && p.amount && <p className="mt-1 text-xs text-brick">{p.amount}</p>}
+                    <Chips
+                      className="mt-2"
+                      label={`Amount suggestions in GEN for ${item.name}`}
+                      chips={AMOUNT_SUGGESTIONS.map((v) => {
+                        const atto = tryAtto(v) ?? 0n;
+                        return { key: v, label: v, pressed: tryAtto(l.amount) === atto, disabled: atto > leftFor(k) };
+                      })}
+                      onPick={(v) => set(k, { amount: v })}
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-semibold" htmlFor={`reason-${k}`}>
@@ -146,6 +168,18 @@ export function ReportForm({ flat, run, busy }: { flat: Flat; run: (call: Call, 
                     <p className={cx("mt-1 text-xs", tried && p.reason ? "text-brick" : "text-ink-faint")}>
                       {tried && p.reason ? sentence(p.reason) : `${MIN_REASON} to ${MAX_REASON} characters. The reason is your claim, not evidence.`}
                     </p>
+                    <Chips
+                      className="mt-2"
+                      label={`Reason suggestions for ${item.name}`}
+                      lead="Pick one:"
+                      chips={REASON_KINDS.filter((r) => reasonsFor(l.kind).includes(r.kind)).map((r) => {
+                        return { key: r.kind, label: r.label, pressed: plain(l.reason) === deductionReason(r.kind, l.kind, item.name) };
+                      })}
+                      onPick={(kind) => {
+                        const r = REASON_KINDS.find((x) => x.kind === kind);
+                        if (r) set(k, { reason: deductionReason(r.kind, l.kind, item.name) });
+                      }}
+                    />
                   </div>
                 </div>
               )}

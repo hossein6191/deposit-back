@@ -4,7 +4,7 @@
 // numbered marker per item of the flat. components/floor-plan.tsx draws it as interactive SVG, and
 // planSvg() below writes the same drawing as an SVG string for the shared-link image.
 //
-// The six sample flats carry hand-made plans (lib/demo-flats.ts). Any other flat gets a plan drawn
+// The sample flats carry hand-made plans (lib/demo-flats.ts). Any other flat gets a plan drawn
 // from its items: one room per item around a hall, the room's kind guessed from the item's name.
 // No imports at runtime except the sample flats, so node runs it in tests/unit.
 

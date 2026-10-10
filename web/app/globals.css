@@ -263,6 +263,70 @@
     width: calc(100% - 0.95rem);
   }
 
+  /* A suggestion: the key tag's small cousin, an outline tag with a punched hole and no string.
+     One click fills a field; the chosen one is inked in terracotta, a used one is greyed out. */
+  .chip {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    max-width: 100%;
+    min-height: 2rem;
+    padding: 0.25rem 0.7rem 0.25rem 1.5rem;
+    border: 1.5px solid var(--color-rule-strong);
+    border-radius: 1rem 0.3rem 0.3rem 1rem;
+    background: var(--color-card);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1.25;
+    text-align: left;
+    overflow-wrap: anywhere;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .chip::before {
+    content: "";
+    position: absolute;
+    left: 0.6rem;
+    top: 50%;
+    width: 0.42rem;
+    height: 0.42rem;
+    margin-top: -0.21rem;
+    border-radius: 999px;
+    background: var(--color-paper);
+    box-shadow: inset 0 0 0 1.5px var(--color-ink-soft);
+  }
+  .chip:hover {
+    border-color: var(--color-ink);
+    background: #fffdf8;
+  }
+  .chip:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+  .chip:focus-visible {
+    outline: 3px solid var(--color-ink);
+    outline-offset: 2px;
+  }
+  .chip[aria-pressed="true"],
+  .chip[aria-expanded="true"] {
+    border-color: var(--color-terracotta);
+    background: rgba(184, 92, 56, 0.1);
+    color: var(--color-terracotta-ink);
+  }
+  .chip[aria-pressed="true"]::before,
+  .chip[aria-expanded="true"]::before {
+    background: var(--color-terracotta);
+    box-shadow: none;
+  }
+  .chip:disabled {
+    border-style: dashed;
+    background: transparent;
+    color: var(--color-ink-faint);
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
   /* A small round button, for help. */
   .pin {
     display: inline-flex;

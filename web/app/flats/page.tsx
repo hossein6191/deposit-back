@@ -1,6 +1,6 @@
 "use client";
 
-// Every flat on offer now. The six sample flats come first: the demo landlord offers several copies
+// Every flat on offer now. The demo landlord's six sample flats come first: it offers several copies
 // of each so that many visitors can take one at once, and each card leads to a copy nobody has taken.
 // Flats other landlords wrote themselves follow.
 
@@ -13,14 +13,14 @@ import { useDemoStatus } from "@/components/use-demo";
 import { useMe } from "@/components/use-me";
 import { useRead } from "@/components/use-read";
 import { flatPath, readFlatsWindow } from "@/lib/chain";
-import { SAMPLE_FLATS, type SampleFlat } from "@/lib/demo-flats";
+import { DEMO_SAMPLES, type SampleFlat } from "@/lib/demo-flats";
 import { plural } from "@/lib/format";
 import { buildPlan } from "@/lib/plans";
 import type { FlatRow } from "@/lib/types";
 
-/** The sample a short row is a copy of: same title, same number of items, same deposit. */
+/** The demo sample a short row is a copy of: same title, same number of items, same deposit. */
 const sampleOfRow = (r: FlatRow): SampleFlat | null =>
-  SAMPLE_FLATS.find((s) => s.title === r.title && s.items.length === r.items && s.depositAtto === r.depositAtto) ?? null;
+  DEMO_SAMPLES.find((s) => s.title === r.title && s.items.length === r.items && s.depositAtto === r.depositAtto) ?? null;
 
 export default function FlatsPage() {
   const read = useRead(() => readFlatsWindow(8), []);
@@ -82,7 +82,7 @@ export default function FlatsPage() {
               </p>
             </div>
             <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {SAMPLE_FLATS.map((s) => {
+              {DEMO_SAMPLES.map((s) => {
                 const list = copies.get(s.key) ?? [];
                 return (
                   <ToLetCard
