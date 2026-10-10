@@ -17,9 +17,27 @@ const KEY_RE = /^0x[0-9a-fA-F]{64}$/;
 type Account = ReturnType<typeof createAccount>;
 let account: { key: string; value: Account } | null = null;
 
+/**
+ * The key as it was pasted into the host, made usable when it can be: surrounding quotes and spaces
+ * are dropped and a 64-hex key without its 0x is given one. Anything else stays unusable.
+ */
+function cleanKey(raw: string): string {
+  let key = raw.trim().replace(/^["'`]+|["'`]+$/g, "").trim();
+  if (/^[0-9a-fA-F]{64}$/.test(key)) key = "0x" + key;
+  return key;
+}
+
+/** Why the configured key cannot be used, in words that never repeat it; "" when it can. */
+function keyProblem(): string {
+  const raw = process.env.DEMO_LANDLORD_KEY ?? "";
+  if (!raw.trim()) return "the demo landlord is offline: this site has no key for it";
+  if (!KEY_RE.test(cleanKey(raw))) return "the demo landlord is offline: the key set on this site is not a 0x private key of 64 hex characters";
+  return "";
+}
+
 /** The demo landlord's account, or null when no usable key is configured. */
 function demoAccount(): Account | null {
-  const key = (process.env.DEMO_LANDLORD_KEY ?? "").trim();
+  const key = cleanKey(process.env.DEMO_LANDLORD_KEY ?? "");
   if (!KEY_RE.test(key)) return null;
   if (!account || account.key !== key) account = { key, value: createAccount(key as `0x${string}`) };
   return account.value;
@@ -28,7 +46,7 @@ function demoAccount(): Account | null {
 export function demoStatusNow(): DemoStatus {
   if (isMock) return { online: false, landlord: "", reason: "in the demo build the demo landlord answers in the browser" };
   const a = demoAccount();
-  if (!a) return { online: false, landlord: "", reason: "the demo landlord is offline: this site has no key for it" };
+  if (!a) return { online: false, landlord: "", reason: keyProblem() };
   if (!contractAddress()) return { online: false, landlord: a.address.toLowerCase(), reason: "the contract is not deployed yet" };
   return { online: true, landlord: a.address.toLowerCase(), reason: "" };
 }
