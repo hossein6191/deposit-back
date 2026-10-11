@@ -1,11 +1,14 @@
 "use client";
 
 // The landlord's side: offer a flat (a sample or one of your own), and file the move-out report on
-// your own flats once a tenant has given notice.
+// your own flats once a tenant has given notice. A notice slip (lib/guide.ts) says what each step
+// waits for, whether the page can be closed and where the deposit is; every other flat gets one line.
 
 import * as React from "react";
 import Link from "next/link";
 
+import { GuideSlip } from "@/components/flat/guide-slip";
+import { guideInput } from "@/components/flat/next-step";
 import { SectionHead } from "@/components/help";
 import { KeyTagLink } from "@/components/key-tag";
 import { OfferForm } from "@/components/offer-form";
@@ -19,8 +22,9 @@ import { useNow } from "@/components/use-now";
 import { useRead } from "@/components/use-read";
 import { useTx } from "@/components/use-tx";
 import { WalletGate } from "@/components/wallet-gate";
-import { flatPath, offeredFlat, phaseNow } from "@/lib/chain";
-import { gen, span } from "@/lib/format";
+import { flatPath, isMock, offeredFlat, phaseNow } from "@/lib/chain";
+import { gen } from "@/lib/format";
+import { flatGuide, flatLine, offerGuide, signGuide, type Guide } from "@/lib/guide";
 import { rememberTx } from "@/lib/tx-memory";
 import type { Call, Flat } from "@/lib/types";
 
@@ -29,6 +33,8 @@ export default function LandlordPage() {
   const now = useNow();
   const [label, setLabel] = React.useState("");
   const [open, setOpen] = React.useState<string>("");
+  // The call being signed: the run knows it only once it has a hash.
+  const [pendingCall, setPendingCall] = React.useState<Call | null>(null);
   const mine = useRead(() => readMine(me.address), [me.address], { enabled: !!me.address });
   const refresh = mine.refresh;
   const tx = useTx(() => void refresh());
@@ -40,12 +46,14 @@ export default function LandlordPage() {
   const run = React.useCallback(
     async (call: Call, what: string) => {
       setLabel(what);
+      setPendingCall(call);
       const h = await start(call);
       if (h && call.fn === "report") rememberTx(String(call.args[0]), h, what);
     },
     [start],
   );
 
+  const signing = tx.sending && !tx.hash && !tx.error ? pendingCall : null;
   const waiting = (mine.data?.landlord ?? []).filter((f) => (now > 0 ? phaseNow(f, now) : f.phase) === "report");
   const rest = (mine.data?.landlord ?? []).filter((f) => !waiting.includes(f));
 
@@ -87,6 +95,8 @@ export default function LandlordPage() {
           </WalletGate>
         </div>
         {tx.error && <p className="mt-3 text-sm text-brick" role="alert">{tx.error}</p>}
+        {signing?.fn === "offer" && <GuideSlip className="mt-4" guide={signGuide({ fn: "offer", label, depositAtto: "0", mock: isMock })} />}
+        {running && tx.call?.fn === "offer" && <GuideSlip className="mt-4" guide={offerGuide(isMock)} />}
         {tx.hash && tx.call?.fn === "offer" && <TxRail className="mt-4" hash={tx.hash} label={label} onDone={tx.onDone} />}
         {newFlat && (
           <div className="mt-4 flex flex-wrap items-center gap-3 rounded-sm bg-sage/10 p-3">
@@ -124,9 +134,16 @@ export default function LandlordPage() {
             {waiting.map((f) => (
               <article key={f.id} className="sheet border-t-4 border-t-terracotta p-4">
                 <FlatLine flat={f} now={now} />
-                <p className="mt-2 text-sm">
-                  The tenant gave notice. Your report is due within <strong>{now > 0 ? span(f.moveoutEnd - now) : "the window"}</strong>.
-                </p>
+                <ReportSlip
+                  guide={
+                    signing?.fn === "report" && signing.args[0] === f.id
+                      ? signGuide({ fn: "report", label, depositAtto: f.depositAtto, mock: isMock })
+                      : flatGuide({
+                          ...guideInput(f, "landlord", now > 0 ? now : f.now),
+                          sending: running && tx.call?.fn === "report" && tx.call.args[0] === f.id ? "report" : undefined,
+                        })
+                  }
+                />
                 {open === f.id ? (
                   <div className="mt-4">
                     <ReportForm flat={f} run={run} busy={busy} />
@@ -158,18 +175,12 @@ export default function LandlordPage() {
   );
 }
 
+function ReportSlip({ guide }: { guide: Guide | null }) {
+  return guide ? <GuideSlip className="mt-3" guide={guide} /> : null;
+}
+
 function FlatLine({ flat, now }: { flat: Flat; now: number }) {
-  const phase = now > 0 ? phaseNow(flat, now) : flat.phase;
-  const next: Record<string, string> = {
-    take: "Waiting for a tenant.",
-    notice: "Let. Waiting for the tenant's notice.",
-    report: "Your report is due.",
-    reclaim: "Your report window closed: anyone may send the whole deposit back.",
-    answer: `The tenant is answering your report (${now > 0 ? span(flat.responseEnd - now) : "the window"} left).`,
-    settle: "The tenant did not answer in time: anyone may settle it as filed.",
-    closed: flat.status === "withdrawn" ? "Withdrawn." : `Closed: ${gen(flat.paidLandlordAtto)} to you, ${gen(flat.paidTenantAtto)} back to the tenant.`,
-    unknown: "",
-  };
+  const line = flatLine(guideInput(flat, "landlord", now > 0 ? now : flat.now));
   return (
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div className="min-w-0">
@@ -182,7 +193,7 @@ function FlatLine({ flat, now }: { flat: Flat; now: number }) {
             {flat.title}
           </Link>
         </h3>
-        <p className="text-sm text-ink-soft">{next[phase]}</p>
+        <p className={line.yours ? "text-sm font-semibold text-terracotta-ink" : "text-sm text-ink-soft"}>{line.text}</p>
       </div>
       <p className="font-display text-xl font-semibold tabular-nums">{gen(flat.depositAtto)}</p>
     </div>

@@ -1,14 +1,17 @@
 "use client";
 
 // What happens next on a flat, for whoever is looking: the tenant, the landlord or anyone else. One
-// panel, driven by the flat's phase on the clock, with the one key tag to press and the money it
-// moves said before anything is signed. Every party who could be stuck has a way out here: a
+// notice slip on top (lib/guide.ts) says what the flat waits for and who for, how long or until when,
+// what is needed from the viewer, whether they can close the page and where the deposit is; under it,
+// the one key tag to press, or the form to fill. While a transaction of this page is being signed or
+// is on its way, the slip follows it instead. Every party who could be stuck has a way out here: a
 // tenant whose landlord never reports reclaims, a landlord whose tenant never answers settles.
 
 import * as React from "react";
 import Link from "next/link";
 
 import { AnswerPanel } from "@/components/flat/answer-panel";
+import { GuideSlip } from "@/components/flat/guide-slip";
 import { KeyTag } from "@/components/key-tag";
 import { ReportForm } from "@/components/report-form";
 import { SplitBar, partyWords } from "@/components/split-bar";
@@ -16,7 +19,8 @@ import { TxRail } from "@/components/tx-rail";
 import { WalletGate } from "@/components/wallet-gate";
 import { calls, isMock, phaseNow, requestDemoReport } from "@/lib/chain";
 import { sampleFor } from "@/lib/demo-flats";
-import { gen, span, windowLabel } from "@/lib/format";
+import { gen } from "@/lib/format";
+import { flatGuide, type FlatInput, type Guide } from "@/lib/guide";
 import type { Call, DemoStatus, Flat, TxStatus } from "@/lib/types";
 
 export type Role = "tenant" | "landlord" | "other";
@@ -24,13 +28,35 @@ export type Role = "tenant" | "landlord" | "other";
 /** When the demo landlord was last asked about a flat in this tab: it is asked by itself at most every two minutes. */
 const askedAt = new Map<string, number>();
 
+/** The flat as lib/guide.ts reads it. */
+export function guideInput(flat: Flat, role: Role, now: number): FlatInput {
+  return {
+    role,
+    now,
+    id: flat.id,
+    status: flat.status,
+    depositAtto: flat.depositAtto,
+    deductedAtto: flat.deductedAtto,
+    moveoutSeconds: flat.moveoutSeconds,
+    responseSeconds: flat.responseSeconds,
+    moveoutEnd: flat.moveoutEnd,
+    responseEnd: flat.responseEnd,
+    paidTenantAtto: flat.paidTenantAtto,
+    paidLandlordAtto: flat.paidLandlordAtto,
+    settledAt: flat.settledAt,
+    mock: isMock,
+  };
+}
+
 function DemoReport({
   flat,
+  now,
   demo,
   onFinal,
   remember,
 }: {
   flat: Flat;
+  now: number;
   demo: DemoStatus | null;
   onFinal: (s: TxStatus) => void;
   remember: (hash: string, label: string) => void;
@@ -59,33 +85,32 @@ function DemoReport({
     return () => clearTimeout(t);
   }, [demo?.online, flat.id, hash, ask]);
 
+  const state = !demo ? undefined : !demo.online ? "offline" : asking ? "asking" : hash ? "filing" : why ? "failed" : "idle";
+  const guide = flatGuide({ ...guideInput(flat, "tenant", now), demo: true, demoState: state, demoReason: !demo?.online ? demo?.reason : why || undefined });
+
   return (
     <div className="space-y-3">
-      <p className="text-[0.95rem]">
-        <strong>The demo landlord files the move-out report for you.</strong> This flat is one of the six sample flats, and its landlord is a demo
-        account run by this site: it signs the sample&apos;s scripted move-out notes and deductions now, so you can answer them alone.
+      {guide && (
+        <GuideSlip
+          guide={guide}
+          action={
+            why ? (
+              <KeyTag size="sm" variant="outline" onClick={() => void ask()} disabled={asking}>
+                Ask the demo landlord again
+              </KeyTag>
+            ) : state === "idle" ? (
+              <KeyTag size="sm" variant="outline" onClick={() => void ask()}>
+                Ask the demo landlord now
+              </KeyTag>
+            ) : undefined
+          }
+        />
+      )}
+      <p className="text-sm text-ink-soft">
+        This flat is one of the six sample flats, and its landlord is a demo account run by this site: it signs the sample&apos;s scripted move-out notes
+        and deductions, so you can answer them alone.
       </p>
-      {demo && !demo.online && (
-        <p className="rounded-sm bg-[#f3e6c8] p-2.5 text-sm">
-          The demo landlord is offline right now ({demo.reason}). Nothing is lost: if no report is filed within the window, you reclaim your whole
-          deposit from this page.
-        </p>
-      )}
-      {asking && <p className="text-sm text-ink-soft">Asking the demo landlord…</p>}
       {hash && <TxRail hash={hash} label="The demo landlord files the move-out report" onDone={onFinal} />}
-      {why && (
-        <div className="space-y-2 text-sm">
-          <p className="text-brick">The demo landlord did not file it: {why}</p>
-          <KeyTag size="sm" variant="outline" onClick={() => void ask()} disabled={asking}>
-            Ask the demo landlord again
-          </KeyTag>
-        </div>
-      )}
-      {!hash && !asking && !why && demo?.online && (
-        <KeyTag size="sm" variant="outline" onClick={() => void ask()}>
-          Ask the demo landlord now
-        </KeyTag>
-      )}
     </div>
   );
 }
@@ -99,6 +124,7 @@ export function NextStep({
   onTick,
   run,
   busy,
+  activity,
   onDemoFinal,
   remember,
 }: {
@@ -110,27 +136,61 @@ export function NextStep({
   onTick: (index: number, on: boolean) => void;
   run: (call: Call, label: string) => void;
   busy: boolean;
+  /** the slip of a transaction this page is signing or sending, which takes the place of the flat's own */
+  activity: Guide | null;
   onDemoFinal: (s: TxStatus) => void;
   remember: (hash: string, label: string) => void;
 }) {
-  const [readNotes, setReadNotes] = React.useState(false);
   const phase = now > 0 ? phaseNow(flat, now) : flat.phase;
+  const isDemoFlat = !!demo?.landlord && flat.landlord === demo.landlord && !!sampleFor(flat.title, flat.items);
+  const demoReport = role === "tenant" && phase === "report" && isDemoFlat && !activity;
+  const guide = activity ?? (demoReport ? null : flatGuide({ ...guideInput(flat, role, now), demo: isDemoFlat }));
+  return (
+    <div className="space-y-4">
+      {guide && <GuideSlip guide={guide} />}
+      {demoReport ? (
+        <DemoReport flat={flat} now={now} demo={demo} onFinal={onDemoFinal} remember={remember} />
+      ) : (
+        <StepBody flat={flat} role={role} phase={phase} isDemoFlat={isDemoFlat} now={now} ticked={ticked} onTick={onTick} run={run} busy={busy} />
+      )}
+    </div>
+  );
+}
+
+/** Under the slip: the key tag or the form for this phase and this viewer, and nothing that only waits. */
+function StepBody({
+  flat,
+  role,
+  phase,
+  isDemoFlat,
+  now,
+  ticked,
+  onTick,
+  run,
+  busy,
+}: {
+  flat: Flat;
+  role: Role;
+  phase: ReturnType<typeof phaseNow>;
+  isDemoFlat: boolean;
+  now: number;
+  ticked: ReadonlySet<number>;
+  onTick: (index: number, on: boolean) => void;
+  run: (call: Call, label: string) => void;
+  busy: boolean;
+}) {
+  const [readNotes, setReadNotes] = React.useState(false);
   const deposit = BigInt(flat.depositAtto);
   const deducted = BigInt(flat.deductedAtto);
   const words = partyWords(role);
-  const left = (end: number) => (now > 0 ? span(end - now) : "the time left");
-  const isDemoFlat = !!demo?.landlord && flat.landlord === demo.landlord && !!sampleFor(flat.title, flat.items);
 
   switch (phase) {
     case "take":
       if (role === "landlord")
         return (
-          <div className="space-y-3">
-            <p>Nobody has taken this flat yet. While nobody has, you may withdraw the offer; nothing is held, so nothing moves.</p>
-            <KeyTag variant="outline" disabled={busy} onClick={() => run(calls.withdrawOffer(flat.id), `Withdrawing the offer of ${flat.id}`)}>
-              Withdraw the offer
-            </KeyTag>
-          </div>
+          <KeyTag variant="outline" disabled={busy} onClick={() => run(calls.withdrawOffer(flat.id), `Withdrawing the offer of ${flat.id}`)}>
+            Withdraw the offer
+          </KeyTag>
         );
       return (
         <div className="space-y-3">
@@ -157,11 +217,6 @@ export function NextStep({
       if (role === "tenant")
         return (
           <div className="space-y-3">
-            <p>
-              You live here, and the contract holds your deposit. When you have moved out, give notice: the landlord then has{" "}
-              <strong>{windowLabel(flat.moveoutSeconds)}</strong> to file the move-out report. If no report comes in that time, you reclaim the whole
-              deposit.
-            </p>
             {isDemoFlat && <p className="text-sm text-ink-soft">This is a sample flat: right after your notice, the demo landlord files its move-out report for you.</p>}
             <WalletGate what="to give notice">
               <KeyTag disabled={busy} onClick={() => run(calls.giveNotice(flat.id), `Giving notice on ${flat.id}`)}>
@@ -170,45 +225,22 @@ export function NextStep({
             </WalletGate>
           </div>
         );
-      return (
-        <p>
-          {role === "landlord" ? "Your tenant lives here." : "Let; a tenant lives here."} Nothing happens until the tenant gives notice; then the
-          landlord has {windowLabel(flat.moveoutSeconds)} to file the move-out report.
-        </p>
-      );
+      return null;
     case "report":
       if (role === "landlord")
         return (
-          <div className="space-y-3">
-            <p>
-              Your tenant has moved out. File the move-out report within <strong>{left(flat.moveoutEnd)}</strong>: one note per item, and a
-              deduction for any item that needs one. If you do not, anyone may send the whole deposit back to the tenant.
-            </p>
-            <WalletGate what="to file the report">
-              <ReportForm flat={flat} run={run} busy={busy} />
-            </WalletGate>
-          </div>
+          <WalletGate what="to file the report">
+            <ReportForm flat={flat} run={run} busy={busy} />
+          </WalletGate>
         );
-      if (role === "tenant" && isDemoFlat) return <DemoReport flat={flat} demo={demo} onFinal={onDemoFinal} remember={remember} />;
-      return (
-        <p>
-          The {role === "tenant" ? "" : "tenant has moved out and the "}landlord has <strong>{left(flat.moveoutEnd)}</strong> to file the
-          move-out report. If no report comes in that time, anyone may send the whole deposit back to the tenant.
-        </p>
-      );
+      return null;
     case "reclaim":
       return (
-        <div className="space-y-3">
-          <p>
-            The report window closed with no report. The landlord loses every deduction: anyone may now send the{" "}
-            <strong>whole deposit, {gen(deposit)}, back to the tenant</strong>. Who presses does not change where the money goes.
-          </p>
-          <WalletGate what="to reclaim it">
-            <KeyTag variant="sage" disabled={busy} onClick={() => run(calls.reclaim(flat.id), `Reclaiming the deposit of ${flat.id} for the tenant`)}>
-              {busy ? "Waiting for the wallet…" : `Send ${gen(deposit)} back to the tenant`}
-            </KeyTag>
-          </WalletGate>
-        </div>
+        <WalletGate what="to reclaim it">
+          <KeyTag variant="sage" disabled={busy} onClick={() => run(calls.reclaim(flat.id), `Reclaiming the deposit of ${flat.id} for the tenant`)}>
+            {busy ? "Waiting for the wallet…" : `Send ${gen(deposit)} back to the tenant`}
+          </KeyTag>
+        </WalletGate>
       );
     case "answer":
       if (role === "tenant")
@@ -218,34 +250,21 @@ export function NextStep({
           </WalletGate>
         );
       return (
-        <div className="space-y-3">
-          <p>
-            The report is filed: {flat.deductions.length} deduction{flat.deductions.length === 1 ? "" : "s"}, {gen(deducted)} of {gen(deposit)}. The
-            tenant has <strong>{left(flat.responseEnd)}</strong> to accept it or contest some of it. If they do not answer, anyone may settle it
-            as filed.
-          </p>
-          <SplitBar
-            total={deposit}
-            parts={[
-              { label: words.tenant + " whatever happens", atto: deposit - deducted, tone: "tenant" },
-              { label: "Deducted, until the tenant answers", atto: deducted, tone: "open" },
-            ]}
-          />
-        </div>
+        <SplitBar
+          total={deposit}
+          parts={[
+            { label: words.tenant + " whatever happens", atto: deposit - deducted, tone: "tenant" },
+            { label: "Deducted, until the tenant answers", atto: deducted, tone: "open" },
+          ]}
+        />
       );
     case "settle":
       return (
-        <div className="space-y-3">
-          <p>
-            The response window closed with no answer, so the report stands as filed: anyone may now send <strong>{gen(deducted)} to the landlord</strong>{" "}
-            and <strong>{gen(deposit - deducted)} back to the tenant</strong>.
-          </p>
-          <WalletGate what="to settle it">
-            <KeyTag disabled={busy} onClick={() => run(calls.settle(flat.id), `Settling ${flat.id} as filed`)}>
-              {busy ? "Waiting for the wallet…" : "Settle as filed"}
-            </KeyTag>
-          </WalletGate>
-        </div>
+        <WalletGate what="to settle it">
+          <KeyTag disabled={busy} onClick={() => run(calls.settle(flat.id), `Settling ${flat.id} as filed`)}>
+            {busy ? "Waiting for the wallet…" : "Settle as filed"}
+          </KeyTag>
+        </WalletGate>
       );
     case "closed":
       return <Closed flat={flat} role={role} />;
@@ -254,42 +273,29 @@ export function NextStep({
   }
 }
 
-const ENDINGS: Record<string, string> = {
-  withdrawn: "The landlord withdrew the offer before anybody took it. Nothing was ever held.",
-  reclaimed: "The landlord filed no report in time, so the whole deposit went back to the tenant.",
-  clean: "The landlord filed a report with no deduction, so the whole deposit went back to the tenant in the same transaction.",
-  accepted: "The tenant accepted every deduction: they went to the landlord and the rest of the deposit to the tenant.",
-  judged: "The tenant contested; the network read each contested deduction and the money moved in the same transaction.",
-  settled: "The tenant did not answer in time, so the report stood as filed.",
-};
-
 function Closed({ flat, role }: { flat: Flat; role: Role }) {
   const words = partyWords(role);
   const deposit = BigInt(flat.depositAtto);
+  if (flat.status === "withdrawn") return null;
   return (
     <div className="space-y-3">
-      <p>{ENDINGS[flat.status]}</p>
-      {flat.status !== "withdrawn" && (
-        <SplitBar
-          total={deposit}
-          parts={[
-            { label: words.tenant, atto: BigInt(flat.paidTenantAtto), tone: "tenant" },
-            { label: words.landlord, atto: BigInt(flat.paidLandlordAtto), tone: "landlord" },
-          ]}
-        />
-      )}
+      <SplitBar
+        total={deposit}
+        parts={[
+          { label: words.tenant, atto: BigInt(flat.paidTenantAtto), tone: "tenant" },
+          { label: words.landlord, atto: BigInt(flat.paidLandlordAtto), tone: "landlord" },
+        ]}
+      />
       {flat.verdict && (
         <p className="text-sm text-ink-soft">
           The value the validators agreed on: <code className="mono rounded-sm bg-paper-deep px-1.5 py-0.5 text-ink">{flat.verdict}</code>
         </p>
       )}
-      {flat.status !== "withdrawn" && (
-        <p className="text-sm">
-          <Link href="/flats" className="link">
-            {isMock ? "Try another flat" : "Find another flat"}
-          </Link>
-        </p>
-      )}
+      <p className="text-sm">
+        <Link href="/flats" className="link">
+          {isMock ? "Try another flat" : "Find another flat"}
+        </Link>
+      </p>
     </div>
   );
 }

@@ -120,3 +120,14 @@ export function share(part: bigint, whole: bigint): number {
   const p = part < 0n ? 0n : part > whole ? whole : part;
   return Number((p * 10000n) / whole) / 100;
 }
+
+/** "14:32" in the reader's own zone, or "11 Oct, 14:32" when it is not today; "" for zero or junk. */
+export function clockTime(seconds: number | null | undefined, nowSeconds: number = Math.floor(Date.now() / 1000)): string {
+  if (!seconds || !Number.isFinite(seconds) || seconds <= 0) return "";
+  const d = new Date(seconds * 1000);
+  const today = new Date(nowSeconds * 1000);
+  const sameDay = d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth() && d.getDate() === today.getDate();
+  const time = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false }).format(d);
+  if (sameDay) return time;
+  return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" }).format(d) + ", " + time;
+}

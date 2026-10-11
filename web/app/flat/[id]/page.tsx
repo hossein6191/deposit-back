@@ -1,9 +1,10 @@
 "use client";
 
 // One lease. The flat as a floor plan beside its items, the tenancy line that moves with the
-// contract, the next step for whoever is looking, every deduction with the word the network gave
-// it, and where the deposit went. Every transaction shows its explorer link from the moment it is
-// sent, while the validators vote.
+// contract, the next step for whoever is looking (led by a notice slip that says what the flat waits
+// for, until when, what is needed, whether the page can be closed and where the deposit is), every
+// deduction with the word the network gave it, and where the deposit went. Every transaction shows
+// its explorer link from the moment it is sent, while the validators vote.
 
 import * as React from "react";
 import Link from "next/link";
@@ -12,7 +13,7 @@ import { useParams } from "next/navigation";
 import { Addr } from "@/components/address";
 import { FloorPlan, PlanLegend } from "@/components/floor-plan";
 import { ItemList } from "@/components/flat/item-list";
-import { NextStep, type Role } from "@/components/flat/next-step";
+import { NextStep, guideInput, type Role } from "@/components/flat/next-step";
 import { SectionHead } from "@/components/help";
 import { Placeholder, ReadError } from "@/components/read-state";
 import { SplitBar, partyWords } from "@/components/split-bar";
@@ -28,6 +29,7 @@ import { useTx } from "@/components/use-tx";
 import { isJudged, isMock, phaseNow, readFlat, txUrl } from "@/lib/chain";
 import { sampleFor } from "@/lib/demo-flats";
 import { gen, when, windowLabel } from "@/lib/format";
+import { flatGuide, signGuide } from "@/lib/guide";
 import { itemStates, planForFlat } from "@/lib/plans";
 import { parseFlatId } from "@/lib/rules";
 import { parseRemembered, rememberTx, rememberedRaw } from "@/lib/tx-memory";
@@ -86,6 +88,8 @@ function Lease({ flat, refresh }: { flat: Flat; refresh: () => Promise<void> }) 
   const [selected, setSelected] = React.useState<number | null>(null);
   const [ticked, setTicked] = React.useState<ReadonlySet<number>>(new Set());
   const [label, setLabel] = React.useState("");
+  // The call being signed: the run knows it only once it has a hash.
+  const [pendingCall, setPendingCall] = React.useState<Call | null>(null);
   const tx = useTx((s, _hash, call) => {
     void refresh();
     if (call.fn === "contest" && s.status === "FINALIZED") setTicked(new Set());
@@ -114,6 +118,7 @@ function Lease({ flat, refresh }: { flat: Flat; refresh: () => Promise<void> }) 
   const run = React.useCallback(
     async (call: Call, what: string) => {
       setLabel(what);
+      setPendingCall(call);
       const h = await start(call);
       if (h) rememberTx(flat.id, h, what);
     },
@@ -128,6 +133,14 @@ function Lease({ flat, refresh }: { flat: Flat; refresh: () => Promise<void> }) 
       return next;
     });
   const select = (item: number) => setSelected((s) => (s === item ? null : item));
+
+  // A transaction this page is signing or sending takes the slip: what it does, and where the deposit goes.
+  const signing = tx.sending && !tx.hash && !tx.error ? pendingCall : null;
+  const activity = signing
+    ? signGuide({ fn: signing.fn, label, depositAtto: flat.depositAtto, deductedAtto: flat.deductedAtto, mock: isMock })
+    : running && tx.call
+      ? flatGuide({ ...guideInput(flat, role, now), demo: isDemoFlat && !!sample, sending: tx.call.fn })
+      : null;
 
   const deposit = BigInt(flat.depositAtto);
   const nextTitle =
@@ -242,6 +255,7 @@ function Lease({ flat, refresh }: { flat: Flat; refresh: () => Promise<void> }) 
                 onTick={onTick}
                 run={run}
                 busy={busy}
+                activity={activity}
                 onDemoFinal={() => void refresh()}
                 remember={remember}
               />

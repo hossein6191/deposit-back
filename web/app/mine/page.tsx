@@ -1,6 +1,7 @@
 "use client";
 
-// The connected account's tenancies and flats, each with the step it waits for and whose step that is.
+// The connected account's tenancies and flats, each with one line from lib/guide.ts: what it waits for,
+// who for, and what is left to do; a flat that waits for this account is marked.
 
 import Link from "next/link";
 
@@ -14,53 +15,18 @@ import { useMe } from "@/components/use-me";
 import { useNow } from "@/components/use-now";
 import { useRead } from "@/components/use-read";
 import { WalletGate } from "@/components/wallet-gate";
-import { flatPath, phaseNow } from "@/lib/chain";
-import { gen, span } from "@/lib/format";
+import { guideInput } from "@/components/flat/next-step";
+import { flatPath } from "@/lib/chain";
+import { gen } from "@/lib/format";
+import { flatLine } from "@/lib/guide";
 import { itemStates, planForFlat } from "@/lib/plans";
 import type { Flat } from "@/lib/types";
 import { cx } from "@/lib/cx";
 
 type Side = "tenant" | "landlord";
 
-/** What the flat waits for, from one side, and whether it is that side's move. */
-function nextOf(f: Flat, side: Side, now: number): { text: string; yours: boolean } {
-  const phase = now > 0 ? phaseNow(f, now) : f.phase;
-  const left = (end: number) => (now > 0 ? span(end - now) : "the time");
-  const t = side === "tenant";
-  switch (phase) {
-    case "take":
-      return { text: "To let; nobody has taken it yet.", yours: false };
-    case "notice":
-      return t ? { text: "You live here. Give notice when you move out.", yours: true } : { text: "Let. Waiting for the tenant's notice.", yours: false };
-    case "report":
-      return t
-        ? { text: `Waiting for the landlord's move-out report: ${left(f.moveoutEnd)} left.`, yours: false }
-        : { text: `Your move-out report is due: ${left(f.moveoutEnd)} left.`, yours: true };
-    case "reclaim":
-      return { text: "No report in time: the whole deposit can be sent back to the tenant now.", yours: true };
-    case "answer":
-      return t
-        ? { text: `The report is filed: accept it or contest it, ${left(f.responseEnd)} left.`, yours: true }
-        : { text: `The tenant is answering your report: ${left(f.responseEnd)} left.`, yours: false };
-    case "settle":
-      return { text: "No answer in time: the report can be settled as filed now.", yours: true };
-    case "closed":
-      return {
-        text:
-          f.status === "withdrawn"
-            ? "Withdrawn before anybody took it."
-            : t
-              ? `Closed: ${gen(f.paidTenantAtto)} came back to you.`
-              : `Closed: ${gen(f.paidLandlordAtto)} came to you.`,
-        yours: false,
-      };
-    default:
-      return { text: "", yours: false };
-  }
-}
-
 function FlatCard({ flat, side, now }: { flat: Flat; side: Side; now: number }) {
-  const n = nextOf(flat, side, now);
+  const n = flatLine(guideInput(flat, side, now > 0 ? now : flat.now));
   return (
     <article className={cx("sheet flex gap-4 p-4", n.yours && "border-l-4 border-l-terracotta")}>
       <div className="hidden w-36 shrink-0 rounded-sm border border-rule bg-paper p-1 sm:block">
